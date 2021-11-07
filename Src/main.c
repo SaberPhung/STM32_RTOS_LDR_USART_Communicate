@@ -33,36 +33,34 @@
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
-/* Task Stack Size */
 #define APP_TASK_START_STK_SIZE 128u
-#define READ_DATA_TASK_STK_SIZE 128u
-#define TRANSMIT_DATA_TASK_STK_SIZE 256u
-#define BLINK_TASK_STK_SIZE 128u
-/* Task Priority */
 #define APP_TASK_START_PRIO 1u
-#define READ_DATA_TASK_PRIO 2u
-#define TRANSMIT_DATA_TASK_PRIO 3u
-#define BLINK_TASK_PRIO 4u
-/* USER CODE END PD */
-
-/* Private macro -------------------------------------------------------------*/
-/* USER CODE BEGIN PM */
-
-/* USER CODE END PM */
-
-/* Private variables ---------------------------------------------------------*/
-
-/* USER CODE BEGIN PV */
-/* Task Control Block */
 static OS_TCB AppTaskStartTCB;
-static OS_TCB ReadDataTaskTCB;
-static OS_TCB TransmitDataTaskTCB;
-static OS_TCB BlinkTaskTCB;
-/* Task Stack */
 static CPU_STK AppTaskStartStk[APP_TASK_START_STK_SIZE];
+static void AppTaskStart(void *p_arg);
+//Read Task
+#ifdef Read
+#define READ_DATA_TASK_STK_SIZE 128u
+#define READ_DATA_TASK_PRIO 2u
+static OS_TCB ReadDataTaskTCB;
 static CPU_STK ReadDataTaskStk[READ_DATA_TASK_STK_SIZE];
+static void ReadDataTask(void *p_arg);
+#endif
+//Transmit Task
+#ifdef Transmit
+#define TRANSMIT_DATA_TASK_STK_SIZE 256u
+#define TRANSMIT_DATA_TASK_PRIO 3u
+static OS_TCB TransmitDataTaskTCB;
 static CPU_STK TransmitDataTaskStk[TRANSMIT_DATA_TASK_STK_SIZE];
+static void TransmitDataTask(void *p_arg);
+#endif
+//Blink Task
+#define BLINK_TASK_STK_SIZE 128u
+#define BLINK_TASK_PRIO 4u
+static OS_TCB BlinkTaskTCB;
 static CPU_STK BlinkTaskStk[BLINK_TASK_STK_SIZE];
+static void BlinkTask(void *p_arg);
+
 /* Semaphore */
 OS_SEM sem;
 
@@ -71,10 +69,7 @@ OS_SEM sem;
 /* Private function prototypes -----------------------------------------------*/
 void SystemClock_Config(void);
 /* USER CODE BEGIN PFP */
-static void AppTaskStart(void *p_arg);
-static void ReadDataTask(void *p_arg);
-static void TransmitDataTask(void *p_arg);
-static void BlinkTask(void *p_arg);
+
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
@@ -255,7 +250,7 @@ static void AppTaskStart(void *p_arg)
     (OS_ERR*)&os_err
   );
 }
-
+#ifdef Read
 static void ReadDataTask(void *p_arg)
 {
   HAL_ADC_Start(&hadc6);
@@ -276,7 +271,8 @@ static void ReadDataTask(void *p_arg)
     OSTimeDlyHMSM(0, 0, 1, 0, OS_OPT_TIME_HMSM_STRICT, &os_err);
   }
 }
-
+#endif
+#ifdef Transmit
 static void TransmitDataTask(void *p_arg)
 {
   OS_ERR os_err;
@@ -297,10 +293,11 @@ static void TransmitDataTask(void *p_arg)
     OSTimeDlyHMSM(0, 0, 1, 0, OS_OPT_TIME_HMSM_STRICT, &os_err);
   }
 }
+#endif
 static void BlinkTask(void *p_arg)
 {
   OS_ERR os_err;
-  unsigned char MSG[] = "\rBlink Task \n\r";
+  unsigned char MSG[] = "\rBlink Task\n\r";
   while (DEF_TRUE)
   {
     OSSemPend(
